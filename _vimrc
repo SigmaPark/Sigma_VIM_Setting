@@ -3,8 +3,6 @@ if has ("syntax")
 	syntax on
 endif
 
-colorscheme desert
-
 set ts=4 " Tab width
 set shiftwidth=4 " Auto indentation tab width
 
@@ -25,6 +23,7 @@ call vundle#begin('$HOME/.vim/bundle')
 	Plugin 'vim-airline/vim-airline'
 	Plugin 'neoclide/coc.nvim', {'branch': 'release'}
 	Plugin 'bfrg/vim-cpp-modern' 
+	Plugin 'morhetz/gruvbox'
 call vundle#end()
 filetype plugin indent on
 """========""========""========""======="=======#""========""========""========""========""=======#
@@ -37,6 +36,10 @@ let g:airline_powerline_font = 1
 let g:airline#extensions#tabline#enable = 1
 let g:airline#extentions#tabline#buffer_nr_show = 1
 let g:airline#extensions#tabline#buffer_nr_format = '%n '
+
+"comfortable-motion
+let g:comfortable_motion_friction = 80.0
+let g:comfortable_motion_air_drag = 3.0
 
 " coc.nvim 
 set hidden
@@ -75,3 +78,8 @@ nmap <leader>rn <Plug>(coc-rename)
 "Vim-cpp-modern
 let g:cpp_simple_highlight = 1
 let g:cpp_named_requirements_highlight = 1
+
+" Colorscheme
+colorscheme gruvbox
+set background=dark    " or light
+"colorscheme desert
