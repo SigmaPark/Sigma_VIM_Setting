@@ -15,3 +15,14 @@ git clone https://github.com/VundleVim/Vundle.vim.git $HOME\.vim\bundle\Vundle.v
 
 3. Execute VIM and type ":PluginInstall" then exit with ":q"
 
+
+## Coc.nvim + clangd 
+
+- Go https://github.com/llvm/llvm-project and download release version.
+```
+LLVM-[version number]-win64.exe  # Windows
+```
+- Install it.
+- Restart VIM and type ":CocInfo" to check if installed.
+
+
