@@ -2,10 +2,11 @@
 
 1. Set .vimrc file 
 ```bash
-~/.vimrc
+$  ~/.vimrc 
 ```
+or
 ```powershell
-${HOME}/_vimrc
+>  ${HOME}/_vimrc
 ```
 
 2. Install Vundle if not exists.
@@ -17,6 +18,12 @@ git clone https://github.com/VundleVim/Vundle.vim.git $HOME\.vim\bundle\Vundle.v
 
 
 ## Coc.nvim + clangd 
+
+- Build coc.nvim
+```
+cd ~/.vim/bundle/coc.nvim
+npm ci
+```
 
 - Go https://github.com/llvm/llvm-project and download release version.
 ```
