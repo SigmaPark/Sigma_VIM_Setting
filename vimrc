@@ -74,7 +74,6 @@ call vundle#begin()
 	Plugin 'VundleVim/Vundle.vim'
 	Plugin 'scrooloose/nerdtree'
 	Plugin 'yuttie/comfortable-motion.vim'
-	Plugin 'Syntastic'
 	Plugin 'octol/vim-cpp-enhanced-highlight'
 	Plugin 'vim-airline/vim-airline'
 call vundle#end()
@@ -83,22 +82,6 @@ filetype plugin indent on
 
 "NerdTree key mapping
 nmap nerd :NERDTreeToggle<cr>
-
-
-"Syntastic
-set statusline+=%#warningmsg#
-set statusline+=%{SyntasticStatuslineFlag()}
-set statusline+=%*
-
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
-let g:syntastic_check_on_wq = 0
-
-let g:syntastic_cpp_compiler = 'g++'
-let g:syntastic_cpp_compiler_option = "-std=c++17 -Wall -Wextra -Wpedantic"
-let g:syntastic_c_compiler_option = "-std=c11 -Wall -Wextra -Wpedantic"
-
 
 "Enhanced Highlight
 let g:cpp_member_variable_highlight = 1
