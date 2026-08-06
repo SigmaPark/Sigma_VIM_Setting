@@ -33,7 +33,7 @@ call vundle#end()
 filetype plugin indent on
 
 " NerdTree
-nmap nerd :NERDTreeToggle<cr>
+nnoremap <C-n> :NERDTreeToggle<cr>
 
 " Vim-airline (plain fonts — no powerline glyphs, lighter and font-agnostic)
 let g:airline_powerline_fonts = 0
