@@ -33,3 +33,29 @@ LLVM-[version number]-win64.exe  # Windows
 - Restart VIM and type ":CocInfo" to check if installed.
 
 
+## Lightweight profile (slow / low-end devices)
+
+`.vimrc.lite` is a trimmed variant for machines where smooth animation
+stutters (e.g. a tablet terminal running over proot). It drops
+`comfortable-motion` so scrolling is instant instead of animated, and enables
+`ttyfast` / `lazyredraw`. IntelliSense (coc.nvim + clangd) is kept intact.
+
+```bash
+cp .vimrc.lite ~/.vimrc        # or: vim -u /path/to/.vimrc.lite
+```
+
+Note: coc.nvim ships its prebuilt bundle on the `release` branch. If Vundle
+leaves it on `master` (source only), check it out manually:
+```bash
+cd ~/.vim/bundle/coc.nvim && git fetch origin release && git checkout -B release FETCH_HEAD
+```
+For C/C++, this profile drives clangd via `~/.vim/coc-settings.json`:
+```json
+{
+  "languageserver": {
+    "clangd": { "command": "clangd", "filetypes": ["c", "cpp", "objc", "objcpp"] }
+  }
+}
+```
+
+
