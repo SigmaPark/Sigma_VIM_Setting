@@ -38,6 +38,11 @@ nnoremap <C-n> :NERDTreeToggle<cr>
 " Vim-airline (plain fonts — no powerline glyphs, lighter and font-agnostic)
 let g:airline_powerline_fonts = 0
 let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#buffer_nr_show = 1
+
+" Buffer navigation (cycle files in the focused split, splits stay put)
+nnoremap <Tab>   :bnext<CR>
+nnoremap <S-Tab> :bprevious<CR>
 
 " coc.nvim
 set hidden

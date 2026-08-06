@@ -32,9 +32,13 @@ nmap nerd :NERDTreeToggle<cr>
 
 "Vim-airline
 let g:airline_powerline_font = 1
-let g:airline#extensions#tabline#enable = 1
-let g:airline#extentions#tabline#buffer_nr_show = 1
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#buffer_nr_show = 1
 let g:airline#extensions#tabline#buffer_nr_format = '%n '
+
+"Buffer navigation (cycle files in the focused split, splits stay put)
+nnoremap <Tab>   :bnext<CR>
+nnoremap <S-Tab> :bprevious<CR>
 
 "comfortable-motion
 let g:comfortable_motion_friction = 80.0
