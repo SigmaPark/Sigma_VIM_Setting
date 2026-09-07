@@ -1,3 +1,21 @@
+" ---- Encoding: read UTF-8 first, fall back to CP949 for legacy Korean files ----
+" Do NOT set 'fileencoding' here: that would silently rewrite every saved file
+" as UTF-8 and corrupt CP949 sources.
+set encoding=utf-8
+set fileencodings=ucs-bom,utf-8,cp949,latin1
+
+" ---- Git Bash / MSYS on Windows ----
+" Git for Windows ships /etc/vimrc, read before this file. It turns on the
+" visual bell and clipboard=unnamed; undo both here (the later vimrc wins).
+"   - the visual bell flashes the whole screen when the cursor hits an edge
+"   - clipboard=unnamed makes x/dd/cw overwrite the system clipboard, so text
+"     copied from another app dies the moment you delete a character.
+"     Copy and paste explicitly with "+y / "+p instead.
+set belloff=all
+set clipboard=
+" coc looks for coc-settings.json in ~/vimfiles on Windows. Keep it beside the
+" plugins in ~/.vim so every machine uses the same path.
+let g:coc_config_home = expand('$HOME/.vim')
 
 if has ("syntax")
 	syntax on
@@ -21,7 +39,8 @@ call vundle#begin('$HOME/.vim/bundle')
 	Plugin 'scrooloose/nerdtree'
 	Plugin 'yuttie/comfortable-motion.vim'
 	Plugin 'vim-airline/vim-airline'
-	Plugin 'neoclide/coc.nvim', {'branch': 'release'}
+	Plugin 'neoclide/coc.nvim', {'pinned': 1}	" Vundle cannot pick a branch;
+							" clone the release branch by hand (see README)
 	Plugin 'bfrg/vim-cpp-modern' 
 	Plugin 'morhetz/gruvbox'
 call vundle#end()
@@ -29,13 +48,16 @@ filetype plugin indent on
 """========""========""========""======="=======#""========""========""========""========""=======#
 
 "NerdTree key mapping
-nmap nerd :NERDTreeToggle<cr>
+nnoremap <C-n> :NERDTreeToggle<cr>
 
 "Vim-airline
-let g:airline_powerline_font = 1
-let g:airline#extensions#tabline#enable = 1
-let g:airline#extentions#tabline#buffer_nr_show = 1
-let g:airline#extensions#tabline#buffer_nr_format = '%n '
+" powerline_fonts needs a Powerline/Nerd-patched font; set 1 after installing one.
+let g:airline_powerline_fonts = 0
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#buffer_nr_show = 1
+" airline feeds the buffer number to printf(). vim has no %n conversion, so
+" '%n ' raises E767; airline's own default is '%s: '.
+let g:airline#extensions#tabline#buffer_nr_format = '%s '
 
 "comfortable-motion
 let g:comfortable_motion_friction = 80.0

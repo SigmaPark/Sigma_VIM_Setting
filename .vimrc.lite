@@ -7,6 +7,19 @@
 " Usage on a slow device:
 "   cp .vimrc.lite ~/.vimrc      " or: vim -u /path/to/.vimrc.lite
 
+" NOTE on terminal scrolling: a VERTICAL split (:vs) makes vim give up the
+" terminal's hardware scroll. Scroll regions are row ranges only, so with two
+" windows side by side vim must repaint every affected cell instead of sending
+" one scroll escape. On a 240x89 terminal that is ~21k cells per scroll step,
+" and it is by far the biggest cause of sluggish scrolling. Horizontal splits
+" (:sp) and tabs (gt) keep the full width and stay fast.
+
+" ---- Encoding: read UTF-8 first, fall back to CP949 for legacy Korean files ----
+" Do NOT set 'fileencoding' here: that would silently rewrite every saved file
+" as UTF-8 and corrupt CP949 sources.
+set encoding=utf-8
+set fileencodings=ucs-bom,utf-8,cp949,latin1
+
 if has("syntax")
 	syntax on
 endif
@@ -26,7 +39,8 @@ call vundle#begin()
 	Plugin 'VundleVim/Vundle.vim'
 	Plugin 'scrooloose/nerdtree'
 	Plugin 'vim-airline/vim-airline'
-	Plugin 'neoclide/coc.nvim', {'branch': 'release'}
+	Plugin 'neoclide/coc.nvim', {'pinned': 1}	" Vundle cannot pick a branch;
+							" clone the release branch by hand (see README)
 	Plugin 'bfrg/vim-cpp-modern'
 	Plugin 'morhetz/gruvbox'
 call vundle#end()

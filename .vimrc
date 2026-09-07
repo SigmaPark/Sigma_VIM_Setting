@@ -1,3 +1,9 @@
+" ---- Encoding: read UTF-8 first, fall back to CP949 for legacy Korean files ----
+" Do NOT set 'fileencoding' here: that would silently rewrite every saved file
+" as UTF-8 and corrupt CP949 sources.
+set encoding=utf-8
+set fileencodings=ucs-bom,utf-8,cp949,latin1
+
 if has ("syntax")
 	syntax on
 endif
@@ -20,7 +26,8 @@ call vundle#begin()
 	Plugin 'scrooloose/nerdtree'
 	Plugin 'yuttie/comfortable-motion.vim'
 	Plugin 'vim-airline/vim-airline'
-	Plugin 'neoclide/coc.nvim', {'branch': 'release'}
+	Plugin 'neoclide/coc.nvim', {'pinned': 1}	" Vundle cannot pick a branch;
+							" clone the release branch by hand (see README)
 	Plugin 'bfrg/vim-cpp-modern' 
 	Plugin 'morhetz/gruvbox'
 call vundle#end()
@@ -28,13 +35,16 @@ filetype plugin indent on
 """========""========""========""======="=======#""========""========""========""========""=======#
 
 "NerdTree key mapping
-nmap nerd :NERDTreeToggle<cr>
+nnoremap <C-n> :NERDTreeToggle<cr>
 
 "Vim-airline
-let g:airline_powerline_font = 1
+" powerline_fonts needs a Powerline/Nerd-patched font; set 1 after installing one.
+let g:airline_powerline_fonts = 0
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#buffer_nr_show = 1
-let g:airline#extensions#tabline#buffer_nr_format = '%n '
+" airline feeds the buffer number to printf(). vim has no %n conversion, so
+" '%n ' raises E767; airline's own default is '%s: '.
+let g:airline#extensions#tabline#buffer_nr_format = '%s '
 
 "Buffer navigation (cycle files in the focused split, splits stay put)
 nnoremap <Tab>   :bnext<CR>
