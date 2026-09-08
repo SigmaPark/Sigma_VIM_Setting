@@ -51,9 +51,14 @@ filetype plugin indent on
 nnoremap <F3> :NERDTreeToggle<cr>
 let g:NERDTreeWinSize = 60 " generous width for long variable/file names
 
+"GUI font
+if has('gui_running')
+	set guifont=D2Coding:h11
+endif
+
 "Vim-airline
-" powerline_fonts needs a Powerline/Nerd-patched font; set 1 after installing one.
-let g:airline_powerline_fonts = 0
+" powerline_fonts needs a Powerline/Nerd-patched font; D2Coding provides one.
+let g:airline_powerline_fonts = 1
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#buffer_nr_show = 1
 " airline feeds the buffer number to printf(). vim has no %n conversion, so

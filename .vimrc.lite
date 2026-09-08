@@ -50,6 +50,11 @@ filetype plugin indent on
 nnoremap <F3> :NERDTreeToggle<cr>
 let g:NERDTreeWinSize = 60 " generous width for long variable/file names
 
+" GUI font
+if has('gui_running')
+	set guifont=D2Coding\ 11
+endif
+
 " Vim-airline (plain fonts — no powerline glyphs, lighter and font-agnostic)
 let g:airline_powerline_fonts = 0
 let g:airline#extensions#tabline#enabled = 1
