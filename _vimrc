@@ -48,7 +48,8 @@ filetype plugin indent on
 """========""========""========""======="=======#""========""========""========""========""=======#
 
 "NerdTree key mapping
-nnoremap <C-n> :NERDTreeToggle<cr>
+nnoremap <F3> :NERDTreeToggle<cr>
+let g:NERDTreeWinSize = 47 " 1.5x the plugin default (31)
 
 "Vim-airline
 " powerline_fonts needs a Powerline/Nerd-patched font; set 1 after installing one.
