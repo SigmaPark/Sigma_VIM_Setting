@@ -1,13 +1,16 @@
 # How To Setup VIM
 
-1. Set .vimrc file 
+1. Point your live config at a profile with `sync.sh` — it symlinks so future
+   edits in this repo take effect immediately, without copying again:
 ```bash
-$  ~/.vimrc 
+sh sync.sh posix    # ~/.vimrc  -> .vimrc
+sh sync.sh lite     # ~/.vimrc  -> .vimrc.lite  (slow / low-end devices)
+sh sync.sh windows  # ~/_vimrc  -> _vimrc
 ```
-or
-```powershell
->  ${HOME}/_vimrc
-```
+   An existing plain file at the target path is backed up (`.bak.<timestamp>`)
+   before the symlink is made. Where symlinks aren't available (e.g. Windows
+   without Developer Mode), it falls back to a plain copy — re-run the script
+   after `git pull` to refresh it.
 
 2. Install Vundle if not exists.
 ```
@@ -114,7 +117,7 @@ stutters (e.g. a tablet terminal running over proot). It drops
 `ttyfast` / `lazyredraw`. IntelliSense (coc.nvim + clangd) is kept intact.
 
 ```bash
-cp .vimrc.lite ~/.vimrc        # or: vim -u /path/to/.vimrc.lite
+sh sync.sh lite                # or: vim -u /path/to/.vimrc.lite
 ```
 
 Note: coc.nvim ships its prebuilt bundle on the `release` branch. If Vundle
