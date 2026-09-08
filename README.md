@@ -92,13 +92,12 @@ completion-popup navigation in insert mode.
 
 ### comfortable-motion tuning
 
-`_vimrc` and `.vimrc` raise `g:comfortable_motion_friction` and
+All three profiles raise `g:comfortable_motion_friction` and
 `g:comfortable_motion_air_drag` above the plugin defaults (80.0 / 2.0) to
 140.0 / 5.0. Friction is a constant deceleration and air_drag is
 velocity-proportional; both were low enough by default that a fast scroll
 kept gliding at low speed instead of stopping. The higher pair keeps the
-animation but cuts that drag tail short. `.vimrc.lite` still drops the
-plugin entirely — see below.
+animation but cuts that drag tail short.
 
 ## Session persistence
 
@@ -111,10 +110,10 @@ open when you quit is what a bare `vim` reopens next time — no manual
 
 ## Lightweight profile (slow / low-end devices)
 
-`.vimrc.lite` is a trimmed variant for machines where smooth animation
-stutters (e.g. a tablet terminal running over proot). It drops
-`comfortable-motion` so scrolling is instant instead of animated, and enables
-`ttyfast` / `lazyredraw`. IntelliSense (coc.nvim + clangd) is kept intact.
+`.vimrc.lite` is a trimmed variant for low-end devices (e.g. a tablet
+terminal running over proot). It keeps `comfortable-motion` — measured smooth
+once vertical splits are avoided, see the gotcha below — and adds `ttyfast` /
+`lazyredraw`. IntelliSense (coc.nvim + clangd) is kept intact.
 
 ```bash
 sh sync.sh lite                # or: vim -u /path/to/.vimrc.lite

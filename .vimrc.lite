@@ -1,18 +1,18 @@
 " ===== Lightweight profile for low-end / slow devices =====
-" A trimmed variant of .vimrc for machines where smooth animation stutters
-" (e.g. a tablet terminal over proot). Drops comfortable-motion so scrolling
-" is instant instead of animated, and enables redraw hints. IntelliSense
-" (coc.nvim + clangd) is kept intact.
+" A trimmed variant of .vimrc: keeps comfortable-motion (measured smooth on a
+" tablet terminal over proot, see NOTE below) but adds ttyfast/lazyredraw.
+" IntelliSense (coc.nvim + clangd) is kept intact.
 "
 " Usage on a slow device:
-"   cp .vimrc.lite ~/.vimrc      " or: vim -u /path/to/.vimrc.lite
+"   sh sync.sh lite      " or: vim -u /path/to/.vimrc.lite
 
 " NOTE on terminal scrolling: a VERTICAL split (:vs) makes vim give up the
 " terminal's hardware scroll. Scroll regions are row ranges only, so with two
 " windows side by side vim must repaint every affected cell instead of sending
 " one scroll escape. On a 240x89 terminal that is ~21k cells per scroll step,
-" and it is by far the biggest cause of sluggish scrolling. Horizontal splits
-" (:sp) and tabs (gt) keep the full width and stay fast.
+" and it is by far the biggest cause of sluggish scrolling — not
+" comfortable-motion, which was measured smooth once :vs is avoided. Horizontal
+" splits (:sp) and tabs (gt) keep the full width and stay fast.
 
 " ---- Encoding: read UTF-8 first, fall back to CP949 for legacy Korean files ----
 " Do NOT set 'fileencoding' here: that would silently rewrite every saved file
@@ -38,6 +38,7 @@ set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
 	Plugin 'VundleVim/Vundle.vim'
 	Plugin 'scrooloose/nerdtree'
+	Plugin 'yuttie/comfortable-motion.vim'
 	Plugin 'vim-airline/vim-airline'
 	Plugin 'neoclide/coc.nvim', {'pinned': 1}	" Vundle cannot pick a branch;
 							" clone the release branch by hand (see README)
@@ -63,6 +64,13 @@ let g:airline#extensions#tabline#buffer_nr_show = 1
 " Buffer navigation (cycle files in the focused split, splits stay put)
 nnoremap <silent> ]b :bnext<CR>
 nnoremap <silent> [b :bprevious<CR>
+
+" comfortable-motion (smooth scroll) — default keys: <C-d>/<C-u>/<C-f>/<C-b>
+" friction is a constant deceleration, air_drag is velocity-proportional;
+" raised both from the plugin defaults (80.0 / 2.0) to cut the low-speed
+" drag tail short instead of gliding to a stop.
+let g:comfortable_motion_friction = 140.0
+let g:comfortable_motion_air_drag = 5.0
 
 " coc.nvim
 set hidden
