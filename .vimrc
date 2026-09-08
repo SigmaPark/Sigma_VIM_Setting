@@ -47,12 +47,15 @@ let g:airline#extensions#tabline#buffer_nr_show = 1
 let g:airline#extensions#tabline#buffer_nr_format = '%s '
 
 "Buffer navigation (cycle files in the focused split, splits stay put)
-nnoremap <Tab>   :bnext<CR>
-nnoremap <S-Tab> :bprevious<CR>
+nnoremap <silent> ]b :bnext<CR>
+nnoremap <silent> [b :bprevious<CR>
 
 "comfortable-motion
-let g:comfortable_motion_friction = 80.0
-let g:comfortable_motion_air_drag = 3.0
+" friction is a constant deceleration, air_drag is velocity-proportional;
+" raised both from the plugin defaults (80.0 / 2.0) to cut the low-speed
+" drag tail short instead of gliding to a stop.
+let g:comfortable_motion_friction = 140.0
+let g:comfortable_motion_air_drag = 5.0
 
 " coc.nvim 
 set hidden
@@ -96,3 +99,26 @@ let g:cpp_named_requirements_highlight = 1
 colorscheme gruvbox
 set background=dark    " or light
 "colorscheme desert
+
+" ---- Session persistence ----
+" `vim` with no file args restores the previous session; any other
+" invocation (vim file.cpp, etc.) leaves the argument list alone. The
+" session is refreshed on every exit so the next bare launch resumes here.
+set sessionoptions-=options
+let g:session_file = expand('$HOME/.vim/session.vim')
+
+function! s:RestoreSession() abort
+	if argc() == 0 && filereadable(g:session_file)
+		execute 'source ' . fnameescape(g:session_file)
+	endif
+endfunction
+
+function! s:SaveSession() abort
+	execute 'mksession! ' . fnameescape(g:session_file)
+endfunction
+
+augroup AutoSession
+	autocmd!
+	autocmd VimEnter * nested call s:RestoreSession()
+	autocmd VimLeave * call s:SaveSession()
+augroup END
