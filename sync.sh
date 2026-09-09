@@ -11,6 +11,11 @@
 
 set -eu
 
+# On Windows/Git-Bash, plain `ln -s` silently falls back to a copy (still
+# exits 0) unless this is set, which would make the "Linked" message below
+# a lie. Harmless no-op on POSIX shells.
+export MSYS=winsymlinks:nativestrict
+
 profile=${1:-}
 repo_dir=$(cd "$(dirname "$0")" && pwd)
 
