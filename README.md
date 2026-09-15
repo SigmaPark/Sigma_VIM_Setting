@@ -152,6 +152,11 @@ deduces, and overloaded operators look like built-in ones.
 The hex colors need `termguicolors`. It stays off in macOS Terminal.app, which
 has no 24-bit color; codedark then falls back to its 256-color palette.
 
+Semantic tokens need no newer clangd than the distro ships: Debian 12's
+clangd 14 places them (`CocSemTypeClass`, `CocSemTypeParameter`, … as text
+properties). Note they are text properties, not syntax items, so `synstack()`
+reports nothing for them — read `prop_list()` instead when checking by hand.
+
 ## Build & run (Windows: CMake + Ninja + MSVC)
 
 `_vimrc` builds and runs a CMake project without leaving vim. Start vim in the
@@ -224,6 +229,49 @@ For C/C++, this profile drives clangd via `~/.vim/coc-settings.json`:
 
 
 
+
+## Git diffs outside vim (lazygit + delta)
+
+`delta` renders `git diff` side by side with syntax highlighting; `lazygit` is
+the TUI that wraps the rest of git. Neither is a vim plugin, but both are part
+of the same working set, so the settings live here.
+
+```
+core.pager             = delta
+interactive.diffFilter = delta --color-only
+delta.navigate         = true
+delta.line-numbers     = true
+delta.side-by-side     = true
+diff.context           = 100000
+alias.ap               = -c diff.context=3 add -p
+```
+
+`diff.context = 100000` shows the whole file around every hunk, the way the
+VSCode git graph does. It also makes `git add -p` offer each file as a single
+hunk, which is useless — `git ap` is the same command with the default context
+back.
+
+lazygit adds its own `--unified` flag, so `diff.context` never reaches it. Set
+it in lazygit's own config instead (`~/.config/lazygit/config.yml` on Linux,
+`%LOCALAPPDATA%\lazygit\config.yml` on Windows).
+
+### Gotcha: delta hangs under proot
+
+On a proot system (Termux/Andronix) a process blocked writing to a pipe never
+receives EPIPE or SIGPIPE. Quitting the pager before the end of the diff
+therefore wedges git and delta instead of ending them — the same defect that
+made `git log --graph` hang. Reproduce it with nothing but `seq 1 5000000 |
+head -2`.
+
+`delta-pager.sh` works around it by draining stdin into a file and pointing
+`less` at the file, so no pipe is ever closed from the reading end:
+
+```
+git config --global delta.pager /path/to/delta-pager.sh
+```
+
+Only proot devices need this. lazygit is unaffected — it runs delta with
+`--paging=never` and draws the result itself.
 
 ## Gotcha: vertical splits kill scrolling in a terminal
 
