@@ -99,6 +99,24 @@ velocity-proportional; both were low enough by default that a fast scroll
 kept gliding at low speed instead of stopping. The higher pair keeps the
 animation but cuts that drag tail short.
 
+## Git change markers (vim-gitgutter)
+
+All three profiles mark lines that differ from the git index in the sign
+column, as VSCode does: green `+` added, aqua `~` modified, red `_` removed
+(gruvbox supplies the colors). `signcolumn=yes` keeps the column open so the
+text does not shift sideways when the first sign appears.
+
+```
+]c / [c        next / previous hunk
+<leader>hp     preview the hunk under the cursor
+<leader>hu     undo the hunk
+<leader>hs     stage the hunk
+ic / ac        hunk text object (e.g. dic)
+```
+
+Unsaved buffer edits are marked too. Verified with `core.autocrlf=true` (CRLF
+working tree, LF index): only real changes get signs.
+
 ## Session persistence
 
 All three profiles remember what was open. Launching `vim` with **no file

@@ -30,6 +30,7 @@ call vundle#begin()
 							" clone the release branch by hand (see README)
 	Plugin 'bfrg/vim-cpp-modern' 
 	Plugin 'morhetz/gruvbox'
+	Plugin 'airblade/vim-gitgutter'
 call vundle#end()
 filetype plugin indent on
 """========""========""========""======="=======#""========""========""========""========""=======#
@@ -100,6 +101,9 @@ nmap <leader>rn <Plug>(coc-rename)
 "Vim-cpp-modern
 let g:cpp_simple_highlight = 1
 let g:cpp_named_requirements_highlight = 1
+
+"vim-gitgutter
+set signcolumn=yes " fixed gutter: signs coming and going would shift the text
 
 " Colorscheme
 colorscheme gruvbox
