@@ -117,6 +117,42 @@ ic / ac        hunk text object (e.g. dic)
 Unsaved buffer edits are marked too. Verified with `core.autocrlf=true` (CRLF
 working tree, LF index): only real changes get signs.
 
+## Build & run (Windows: CMake + Ninja + MSVC)
+
+`_vimrc` builds and runs a CMake project without leaving vim. Start vim in the
+project root, the directory holding `CMakeLists.txt`.
+
+```
+<F7>  :Build          configure build/ with Ninja if needed, then build
+<F5>  :Run [args]     build, then run the executable target
+      :Run! [args]    choose the target again (asked when there are several)
+]q / [q               next / previous entry in the error list
+```
+
+- **MSVC environment.** Git Bash has no `cl.exe`, `INCLUDE` or `LIB`. The first
+  build in a vim session finds Visual Studio with `vswhere`, runs
+  `vcvars64.bat`, and copies the variables it adds or changes into vim. That
+  takes a few seconds, once; the shell itself is left alone.
+- **Configure.** When `build/build.ninja` is missing, `:Build` runs
+  `cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, which also hands clangd its
+  `compile_commands.json`. A `build/` made by another generator (e.g. Visual
+  Studio's) is left untouched; remove it to switch.
+- **The build directory's own ninja.** `:Build` runs `cmake --build build`, which
+  uses the ninja recorded in `CMakeCache.txt` rather than the first one on PATH.
+  Visual Studio bundles ninja 1.12 and winget installs 1.13, and each deletes
+  the other's `.ninja_log` ("build log version is too new / too old; starting
+  over"). Mixing them on one build directory would rebuild everything every
+  time VSCode and vim take turns.
+- **Errors.** The build log scrolls by on the terminal, then the diagnostics
+  land in the quickfix window. cl.exe prints localized messages in the ANSI
+  code page, so the log is decoded as CP949 and Korean messages stay readable.
+- **Save first.** Modified buffers are written (`:wall`) before every build.
+- **Run.** Executable targets come from `ninja -t targets`. With one target
+  `<F5>` runs it directly; with several it asks once per project root. The
+  program runs in the terminal with the project root as its working directory,
+  and vim comes back after Enter.
+
 ## Session persistence
 
 All three profiles remember what was open. Launching `vim` with **no file
