@@ -43,7 +43,7 @@ call vundle#begin()
 	Plugin 'neoclide/coc.nvim', {'pinned': 1}	" Vundle cannot pick a branch;
 							" clone the release branch by hand (see README)
 	Plugin 'bfrg/vim-cpp-modern'
-	Plugin 'morhetz/gruvbox'
+	Plugin 'tomasiser/vim-code-dark'
 	Plugin 'airblade/vim-gitgutter'
 call vundle#end()
 filetype plugin indent on
@@ -110,9 +110,60 @@ let g:cpp_named_requirements_highlight = 1
 " vim-gitgutter
 set signcolumn=yes " fixed gutter: signs coming and going would shift the text
 
-" Colorscheme
+" ---- Colors: Visual Studio 2017 Dark - C++ ----
+" The VSCode theme in use on the PC (C/C++ Themes extension). codedark draws
+" the editor chrome; the token colors below are copied from that theme's own
+" file, cpptools_dark_vs.json, and the git gutter takes VSCode's dark defaults.
+" Names only clangd can resolve (types, macros, parameters, members, ...)
+" arrive as coc semantic tokens, which need "semanticTokens.enable": true in
+" coc-settings.json.
+if has('termguicolors') && $TERM_PROGRAM !=# 'Apple_Terminal'
+	set termguicolors " Terminal.app lacks 24-bit color; codedark falls back to 256
+endif
+
+function! s:VsDarkColors() abort
+	" coc gives every semantic highlight one priority, so where a modifier group
+	" (CocSemTypeModClassDeduced on auto, say) overlaps its type group either one
+	" may win. Only type groups get colors; auto shows the type it deduces.
+	let l:palette = {
+		\ '#569CD6': ['Statement', 'Conditional', 'Repeat', 'Label', 'Keyword', 'Exception',
+		\     'CocSemTypeKeyword', 'CocSemTypeModifier'],
+		\ '#9B9B9B': ['PreProc', 'Include', 'Define', 'Macro', 'PreCondit'],
+		\ '#C8C8C8': ['Identifier', 'Function', 'CocSemTypeNamespace', 'CocSemTypeVariable',
+		\     'CocSemTypeFunction', 'CocSemTypeMethod', 'CocSemTypeLabel'],
+		\ '#4EC9B0': ['CocSemTypeType', 'CocSemTypeClass', 'CocSemTypeStruct',
+		\     'CocSemTypeEnum', 'CocSemTypeInterface', 'CocSemTypeTypeParameter',
+		\     'CocSemTypeConcept'],
+		\ '#BD63C5': ['CocSemTypeMacro'],
+		\ '#7F7F7F': ['CocSemTypeParameter'],
+		\ '#DADADA': ['CocSemTypeProperty'],
+		\ '#B8D7A3': ['CocSemTypeEnumMember'],
+		\ '#2B91AF': ['LineNr', 'CursorLineNr'],
+		\ '#487E02': ['GitGutterAdd'],
+		\ '#1B81A8': ['GitGutterChange', 'GitGutterChangeDelete'],
+		\ '#F14C4C': ['GitGutterDelete'],
+		\ }
+	for [l:color, l:groups] in items(l:palette)
+		for l:group in l:groups
+			" coc and gitgutter define these as links; clear first so the color sticks.
+			if l:group =~# '^\%(Coc\|GitGutter\)'
+				execute 'highlight clear ' . l:group
+			endif
+			execute 'highlight ' . l:group . ' guifg=' . l:color
+		endfor
+	endfor
+	" vim-cpp-modern paints std as a constant; VS draws namespaces plain.
+	highlight link cppSTLnamespace Identifier
+endfunction
+
+augroup VsDarkColors
+	autocmd!
+	autocmd ColorScheme codedark call s:VsDarkColors()
+augroup END
+
 set background=dark
-silent! colorscheme gruvbox
+silent! colorscheme codedark
+let g:airline_theme = 'codedark'
 
 " ---- Session persistence ----
 " `vim` with no file args restores the previous session; any other

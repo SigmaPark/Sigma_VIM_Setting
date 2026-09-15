@@ -57,7 +57,8 @@ warns about the conflict.
 {
   "clangd.path": "C:/Users/<you>/.local/clangd/bin/clangd.exe",
   "clangd.checkUpdates": false,
-  "clangd.arguments": ["--background-index", "--header-insertion=never"]
+  "clangd.arguments": ["--background-index", "--header-insertion=never"],
+  "semanticTokens.enable": true
 }
 ```
 
@@ -102,9 +103,9 @@ animation but cuts that drag tail short.
 ## Git change markers (vim-gitgutter)
 
 All three profiles mark lines that differ from the git index in the sign
-column, as VSCode does: green `+` added, aqua `~` modified, red `_` removed
-(gruvbox supplies the colors). `signcolumn=yes` keeps the column open so the
-text does not shift sideways when the first sign appears.
+column, as VSCode does: green `+` added, blue `~` modified, red `_` removed
+(VSCode's dark gutter colors, see Colors below). `signcolumn=yes` keeps the
+column open so the text does not shift sideways when the first sign appears.
 
 ```
 ]c / [c        next / previous hunk
@@ -116,6 +117,40 @@ ic / ac        hunk text object (e.g. dic)
 
 Unsaved buffer edits are marked too. Verified with `core.autocrlf=true` (CRLF
 working tree, LF index): only real changes get signs.
+
+## Colors: Visual Studio 2017 Dark - C++
+
+All three profiles copy the VSCode theme in use on the PC, *Visual Studio 2017
+Dark - C++* from the C/C++ Themes extension. `tomasiser/vim-code-dark` draws
+the editor chrome (background, popups, airline); the token colors are then
+overridden with the values from that theme's own file, `cpptools_dark_vs.json`.
+
+| token | color |
+|---|---|
+| keywords (`if`, `int`, `const`, ...) | `#569CD6` |
+| preprocessor directives | `#9B9B9B` |
+| macro names | `#BD63C5` |
+| types, classes, enums, template parameters | `#4EC9B0` |
+| functions, variables, namespaces | `#C8C8C8` |
+| data members | `#DADADA` |
+| parameters | `#7F7F7F` |
+| enumerators | `#B8D7A3` |
+| strings / numbers / comments | `#CE9178` / `#B5CEA8` / `#6A9955` |
+| line numbers | `#2B91AF` |
+
+Regex syntax cannot tell a type from a variable, so the names (types, macros,
+parameters, members, enumerators) come from clangd as **semantic tokens**. Turn
+them on in `coc-settings.json` (`"semanticTokens.enable": true`, shown above)
+and check a buffer with `:CocCommand semanticTokens.checkCurrent`.
+
+Only token *types* are colored, never modifiers. coc gives every semantic
+highlight the same priority, so where a modifier group overlaps its type group
+the winner is arbitrary: measured, an `auto` deducing `int` came out blue while
+one deducing a class came out teal. So `auto` shows the color of the type it
+deduces, and overloaded operators look like built-in ones.
+
+The hex colors need `termguicolors`. It stays off in macOS Terminal.app, which
+has no 24-bit color; codedark then falls back to its 256-color palette.
 
 ## Build & run (Windows: CMake + Ninja + MSVC)
 
