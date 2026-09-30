@@ -165,6 +165,18 @@ set background=dark
 silent! colorscheme codedark
 let g:airline_theme = 'codedark'
 
+" ---- Cursor shape per mode (DECSCUSR) ----
+" Block in normal mode, bar in insert, underline in replace. Terminals that
+" default to a bar cursor (Windows Terminal) would otherwise show a bar
+" everywhere. Start in block and hand the bar back to the shell on exit.
+if !has('gui_running')
+	let &t_SI = "\e[6 q"
+	let &t_SR = "\e[4 q"
+	let &t_EI = "\e[2 q"
+	let &t_ti .= "\e[2 q"
+	let &t_te .= "\e[6 q"
+endif
+
 " ---- Session persistence ----
 " `vim` with no file args restores the previous session; any other
 " invocation (vim file.cpp, etc.) leaves the argument list alone. The
