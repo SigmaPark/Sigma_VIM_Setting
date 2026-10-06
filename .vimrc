@@ -36,25 +36,7 @@ filetype plugin indent on
 """========""========""========""======="=======#""========""========""========""========""=======#
 
 "NerdTree key mapping
-" Plain NERDTreeToggle starts a brand-new, collapsed tree in every tab,
-" because NERDTree keeps one independent tree per tab by default. bufwinnr()
-" only looks at the current tab's windows, so the right existence check is
-" t:NERDTreeBufName (what :NERDTreeMirror itself scans across tabs to decide
-" whether anything exists to mirror). Mirror an existing tree into a fresh
-" tab instead of recreating it, so switching tabs with gt doesn't lose the
-" expanded path; NERDTreeMirror no-ops ("No trees to mirror") on the very
-" first tab, so fall back to a normal toggle then.
-function! s:ToggleNERDTree() abort
-	if exists('t:NERDTreeBufName')
-		NERDTreeToggle
-	else
-		NERDTreeMirror
-		if !exists('t:NERDTreeBufName')
-			NERDTreeToggle
-		endif
-	endif
-endfunction
-nnoremap <silent> <F3> :call <SID>ToggleNERDTree()<cr>
+nnoremap <F3> :NERDTreeToggle<cr>
 let g:NERDTreeWinSize = 60 " generous width for long variable/file names
 
 "GUI font
