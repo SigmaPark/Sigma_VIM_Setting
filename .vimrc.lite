@@ -125,6 +125,14 @@ function! s:VsDarkColors() abort
 	" coc gives every semantic highlight one priority, so where a modifier group
 	" (CocSemTypeModClassDeduced on auto, say) overlaps its type group either one
 	" may win. Only type groups get colors; auto shows the type it deduces.
+	" Inactive preprocessor regions: VS and VSCode fade them to 55% opacity
+	" instead of painting them as comments. A terminal cell has no alpha, so
+	" #828282 is Normal's #D4D4D4 blended at 55% over the #1E1E1E background.
+	" Two painters cover them: c.vim's cCppOut for a literal '#if 0' (set here
+	" before the syntax file loads, so its 'hi def link cCppOut Comment' is
+	" skipped), and clangd, which reports every inactive region - also ones
+	" disabled through an undefined macro - as 'comment' semantic tokens that
+	" coc paints over the syntax. Real comments get no token, so they stay green.
 	let l:palette = {
 		\ '#569CD6': ['Statement', 'Conditional', 'Repeat', 'Label', 'Keyword', 'Exception',
 		\     'CocSemTypeKeyword', 'CocSemTypeModifier'],
@@ -139,6 +147,7 @@ function! s:VsDarkColors() abort
 		\ '#DADADA': ['CocSemTypeProperty'],
 		\ '#B8D7A3': ['CocSemTypeEnumMember'],
 		\ '#2B91AF': ['LineNr', 'CursorLineNr'],
+		\ '#828282': ['cCppOut', 'CocSemTypeComment'],
 		\ '#487E02': ['GitGutterAdd'],
 		\ '#1B81A8': ['GitGutterChange', 'GitGutterChangeDelete'],
 		\ '#F14C4C': ['GitGutterDelete'],
@@ -154,13 +163,6 @@ function! s:VsDarkColors() abort
 	endfor
 	" vim-cpp-modern paints std as a constant; VS draws namespaces plain.
 	highlight link cppSTLnamespace Identifier
-	" VS and VSCode's C/C++ extension draw code inside an inactive #if 0 block
-	" as the normal text faded to 55% opacity, not as a comment. A terminal
-	" cell has no alpha, so this is Normal's #D4D4D4 blended at 55% over the
-	" #1E1E1E background. Set before c.vim loads, so its 'hi def link cCppOut
-	" Comment' is skipped. Vim only knows the literal '#if 0' form; branches
-	" disabled through an undefined macro need the compiler and stay colored.
-	highlight cCppOut guifg=#828282 ctermfg=245
 endfunction
 
 augroup VsDarkColors
