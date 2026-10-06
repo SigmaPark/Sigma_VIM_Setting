@@ -149,6 +149,13 @@ function! s:VsDarkColors() abort
 	endfor
 	" vim-cpp-modern paints std as a constant; VS draws namespaces plain.
 	highlight link cppSTLnamespace Identifier
+	" VS and VSCode's C/C++ extension draw code inside an inactive #if 0 block
+	" as the normal text faded to 55% opacity, not as a comment. A terminal
+	" cell has no alpha, so this is Normal's #D4D4D4 blended at 55% over the
+	" #1E1E1E background. Set before c.vim loads, so its 'hi def link cCppOut
+	" Comment' is skipped. Vim only knows the literal '#if 0' form; branches
+	" disabled through an undefined macro need the compiler and stay colored.
+	highlight cCppOut guifg=#828282 ctermfg=245
 endfunction
 
 augroup VsDarkColors
