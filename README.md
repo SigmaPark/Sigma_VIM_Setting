@@ -100,6 +100,17 @@ velocity-proportional; both were low enough by default that a fast scroll
 kept gliding at low speed instead of stopping. The higher pair keeps the
 animation but cuts that drag tail short.
 
+## NERDTree across tabs (`<F3>`)
+
+`:NERDTreeToggle` keeps one tree per tab page — open a second tab (`gt`,
+`:tabnew`) and plain `<F3>` starts a brand-new, collapsed tree there, with
+every expanded path from the first tab gone. `<F3>` is bound to a small
+function instead: if the current tab already has a tree, toggle it as usual;
+otherwise mirror whichever tree already exists (`:NERDTreeMirror`, the same
+buffer, so the expanded state carries over) and only fall back to a fresh
+`:NERDTreeToggle` on the very first tab of the session, where there is
+nothing yet to mirror.
+
 ## Git change markers (vim-gitgutter)
 
 All three profiles mark lines that differ from the git index in the sign
