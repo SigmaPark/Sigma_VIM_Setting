@@ -191,16 +191,25 @@ endif
 " invocation (vim file.cpp, etc.) leaves the argument list alone. The
 " session is refreshed on every exit so the next bare launch resumes here.
 set sessionoptions-=options
-let g:session_file = expand('$HOME/.vim/session.vim')
+" Keyed by cwd, so each project directory remembers its own session
+" instead of every directory sharing one (path separators/colon can't
+" live in a filename, so they are folded into '%').
+let g:session_dir = expand('$HOME/.vim/sessions/')
+
+function! s:SessionFile() abort
+	return g:session_dir . substitute(getcwd(), '[\/:]', '%', 'g') . '.vim'
+endfunction
 
 function! s:RestoreSession() abort
-	if argc() == 0 && filereadable(g:session_file)
-		execute 'source ' . fnameescape(g:session_file)
+	let l:file = s:SessionFile()
+	if argc() == 0 && filereadable(l:file)
+		execute 'source ' . fnameescape(l:file)
 	endif
 endfunction
 
 function! s:SaveSession() abort
-	execute 'mksession! ' . fnameescape(g:session_file)
+	call mkdir(g:session_dir, 'p')
+	execute 'mksession! ' . fnameescape(s:SessionFile())
 endfunction
 
 augroup AutoSession
