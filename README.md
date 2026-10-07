@@ -100,6 +100,14 @@ velocity-proportional; both were low enough by default that a fast scroll
 kept gliding at low speed instead of stopping. The higher pair keeps the
 animation but cuts that drag tail short.
 
+## Leader key and NERDTree
+
+All three profiles set `<leader>` to `<Space>` (`let mapleader = " "`, placed before
+the first `<leader>` mapping). NERDTree is toggled with `<leader>n`, i.e. `<Space>` then
+`n` in normal mode. It used to be `<F3>`, which a 65% keyboard without an F row cannot
+type. The existing `<leader>h*` (gitgutter) and `<leader>rn` (coc) mappings now
+start with `<Space>` as well.
+
 ## Git change markers (vim-gitgutter)
 
 All three profiles mark lines that differ from the git index in the sign

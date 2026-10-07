@@ -36,7 +36,8 @@ filetype plugin indent on
 """========""========""========""======="=======#""========""========""========""========""=======#
 
 "NerdTree key mapping
-nnoremap <F3> :NERDTreeToggle<cr>
+let mapleader = " " " <Space> as <leader>; must precede every <leader> mapping
+nnoremap <leader>n :NERDTreeToggle<cr>
 let g:NERDTreeWinSize = 60 " generous width for long variable/file names
 
 "GUI font
