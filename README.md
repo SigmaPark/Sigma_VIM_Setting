@@ -126,6 +126,18 @@ ic / ac        hunk text object (e.g. dic)
 Unsaved buffer edits are marked too. Verified with `core.autocrlf=true` (CRLF
 working tree, LF index): only real changes get signs.
 
+## Trailing whitespace
+
+Trailing spaces and tabs are painted as red cells, like the lazygit diff
+preview, so they show without putting the cursor on them. In insert mode the
+run right before the cursor is left alone, so typing a space between words does
+not flash red. The color is set again on every `ColorScheme`, so switching
+colorschemes keeps it.
+
+Nothing is stripped automatically. Under the Sigma code formatting convention a
+trailing space is surplus whitespace, not a violation, and a multi-line variable
+declaration carries a deliberate two-space marker at the end of its type line.
+
 ## Colors: Visual Studio 2017 Dark - C++
 
 All three profiles copy the VSCode theme in use on the PC, *Visual Studio 2017

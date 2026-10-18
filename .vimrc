@@ -166,6 +166,15 @@ augroup VsDarkColors
 	autocmd ColorScheme codedark call s:VsDarkColors()
 augroup END
 
+" Trailing whitespace shows as red cells, like the lazygit diff preview;
+" while typing, the run right before the cursor is spared.
+augroup TrailingWhitespace
+	autocmd!
+	autocmd ColorScheme * highlight ExtraWhitespace ctermbg=red guibg=red
+	autocmd BufWinEnter,InsertLeave * match ExtraWhitespace /\s\+$/
+	autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
+augroup END
+
 set background=dark
 colorscheme codedark
 let g:airline_theme = 'codedark'
