@@ -37,7 +37,7 @@ set rtp+=$HOME/.vim/bundle/Vundle.vim
 call vundle#begin('$HOME/.vim/bundle')
 	Plugin 'VundleVim/Vundle.vim'
 	Plugin 'scrooloose/nerdtree'
-	Plugin 'yuttie/comfortable-motion.vim'
+	" Plugin 'yuttie/comfortable-motion.vim'	" off: scrolling felt too slow
 	Plugin 'vim-airline/vim-airline'
 	Plugin 'neoclide/coc.nvim', {'pinned': 1}	" Vundle cannot pick a branch;
 							" clone the release branch by hand (see README)
@@ -144,13 +144,13 @@ function! s:VsDarkColors() abort
 	" coc paints over the syntax. Real comments get no token, so they stay green.
 	let l:palette = {
 		\ '#569CD6': ['Statement', 'Conditional', 'Repeat', 'Label', 'Keyword', 'Exception',
-		\     'CocSemTypeKeyword', 'CocSemTypeModifier'],
+		\     'CocSemTypeKeyword', 'CocSemTypeModifier', 'VsKeywordOp'],
 		\ '#9B9B9B': ['PreProc', 'Include', 'Define', 'Macro', 'PreCondit'],
 		\ '#C8C8C8': ['Identifier', 'Function', 'CocSemTypeNamespace', 'CocSemTypeVariable',
 		\     'CocSemTypeFunction', 'CocSemTypeMethod', 'CocSemTypeLabel'],
 		\ '#4EC9B0': ['CocSemTypeType', 'CocSemTypeClass', 'CocSemTypeStruct',
 		\     'CocSemTypeEnum', 'CocSemTypeInterface', 'CocSemTypeTypeParameter',
-		\     'CocSemTypeConcept'],
+		\     'CocSemTypeConcept', 'VsStlType'],
 		\ '#BD63C5': ['CocSemTypeMacro'],
 		\ '#7F7F7F': ['CocSemTypeParameter'],
 		\ '#DADADA': ['CocSemTypeProperty'],
@@ -172,11 +172,22 @@ function! s:VsDarkColors() abort
 	endfor
 	" vim-cpp-modern paints std as a constant; VS draws namespaces plain.
 	highlight link cppSTLnamespace Identifier
+	" Without clangd's tokens vim-cpp-modern paints std *_t names as Typedef/Type (blue)
+	" and *_v variable templates as Boolean (blue); VS draws types teal, variables plain.
+	for l:group in ['cppSTLtypedef', 'cppSTLenum', 'cppSTLconcept', 'cppSTLtype',
+		\ 'cppSTLiterator', 'cppSTLexception']
+		execute 'highlight link ' . l:group . ' VsStlType'
+	endfor
+	highlight link cppSTLbool Identifier
 endfunction
 
 augroup VsDarkColors
 	autocmd!
 	autocmd ColorScheme codedark call s:VsDarkColors()
+	" sizeof and friends are cOperator/cppOperator, which codedark paints as plain
+	" text like + and =; VS draws just these keywords blue. Re-declaring the words
+	" in our own group overrides the earlier definition, symbols stay untouched.
+	autocmd Syntax c,cpp,cuda syntax keyword VsKeywordOp sizeof alignof typeid new delete static_assert
 augroup END
 
 " Trailing whitespace shows as red cells, like the lazygit diff preview;
@@ -226,6 +237,11 @@ function! s:RestoreSession() abort
 endfunction
 
 function! s:SaveSession() abort
+	" A vimdiff (git difftool, lazygit <c-t>) is a throwaway view; saving it
+	" would replace the session the next bare `vim` restores.
+	if &diff
+		return
+	endif
 	call mkdir(g:session_dir, 'p')
 	execute 'mksession! ' . fnameescape(s:SessionFile())
 endfunction
@@ -238,11 +254,125 @@ augroup END
 
 " ---- Build & run: CMake + Ninja + MSVC ----
 " Start vim in the project root, the directory that holds CMakeLists.txt.
-"   <F7>  :Build          configure build/ with Ninja when needed, then build
-"   <F5>  :Run [args]     build, then run the executable target
-"         :Run! [args]    pick the target again (asked when there are several)
-"   ]q / [q               next / previous entry in the error list
+"   <C-F7>  :Build          configure with Ninja when needed, then build
+"           :Preset [name]  choose the CMake preset the keys below use
+"   <C-F6>  :Clean          delete the build outputs, keep the configuration
+"   <C-F5>  :Run [args]     build, then run the executable target
+"           :Run! [args]    pick the target again (asked when there are several)
+"   <F5>    :Debug          open the project in VSCode and debug it there
+"   ]q / [q                 next / previous entry in the error list
+" Without a CMakePresets.json the directory below is used as it is.
 let g:build_dir = 'build'
+
+" The configure presets of CMakePresets.json and CMakeUserPresets.json: a
+" dictionary of preset name to build directory, relative to the project root.
+" binaryDir is inherited, so a preset without one takes its parent's.
+function! s:PresetBinaryDir(raw, name, depth) abort
+	let l:preset = get(a:raw, a:name, {})
+	if has_key(l:preset, 'binaryDir')
+		return l:preset.binaryDir
+	endif
+	if a:depth > 16
+		return ''
+	endif
+	let l:parents = get(l:preset, 'inherits', [])
+	for l:parent in type(l:parents) == v:t_list ? l:parents : [l:parents]
+		let l:dir = s:PresetBinaryDir(a:raw, l:parent, a:depth + 1)
+		if !empty(l:dir)
+			return l:dir
+		endif
+	endfor
+	return ''
+endfunction
+
+function! s:ConfigurePresets() abort
+	let l:raw = {}
+	for l:file in ['CMakePresets.json', 'CMakeUserPresets.json']
+		if !filereadable(l:file)
+			continue
+		endif
+		try
+			let l:json = json_decode(join(readfile(l:file), "\n"))
+		catch
+			call s:BuildError(l:file . ' is not valid JSON')
+			continue
+		endtry
+		for l:preset in get(l:json, 'configurePresets', [])
+			let l:raw[l:preset.name] = l:preset
+		endfor
+	endfor
+	let l:found = {}
+	for l:name in keys(l:raw)
+		if get(l:raw[l:name], 'hidden', v:false)
+			continue
+		endif
+		let l:dir = s:PresetBinaryDir(l:raw, l:name, 0)
+		let l:dir = substitute(l:dir, '^\${sourceDir}/', '', '')
+		let l:dir = substitute(l:dir, '\${presetName}', l:name, 'g')
+		if !empty(l:dir) && l:dir !~# '\${'
+			let l:found[l:name] = l:dir
+		endif
+	endfor
+	return l:found
+endfunction
+
+" The preset chosen per project root, so it is asked for only once.
+let s:presets = {}
+
+" [preset name, build directory] for the project in the working directory.
+" The name is empty when there are no presets and g:build_dir applies. With
+" several presets and no choice yet, 'default' is taken, else the user is asked.
+function! s:Target() abort
+	let l:all = s:ConfigurePresets()
+	if empty(l:all)
+		return ['', g:build_dir]
+	endif
+	let l:name = get(s:presets, getcwd(), '')
+	if !has_key(l:all, l:name)
+		let l:names = sort(keys(l:all))
+		if has_key(l:all, 'default')
+			let l:name = 'default'
+		elseif len(l:names) == 1
+			let l:name = l:names[0]
+		else
+			let l:choice = inputlist(['Which CMake preset?']
+				\ + map(copy(l:names), {i, n -> printf('%d. %s', i + 1, n)}))
+			if l:choice < 1 || l:choice > len(l:names)
+				let l:name = l:names[0]
+			else
+				let l:name = l:names[l:choice - 1]
+			endif
+		endif
+		let s:presets[getcwd()] = l:name
+	endif
+	return [l:name, l:all[l:name]]
+endfunction
+
+function! s:Preset(name) abort
+	let l:all = s:ConfigurePresets()
+	if empty(l:all)
+		call s:BuildError('no configure presets here: start vim in the project root')
+		return
+	endif
+	if empty(a:name)
+		let [l:current, l:dir] = s:Target()
+		echo 'Build preset: ' . l:current . ' (' . l:dir . '/)'
+		for l:other in sort(keys(l:all))
+			echo (l:other ==# l:current ? '* ' : '  ') . l:other . '  ' . l:all[l:other] . '/'
+		endfor
+		return
+	endif
+	if !has_key(l:all, a:name)
+		call s:BuildError('no configure preset named ' . a:name)
+		return
+	endif
+	let s:presets[getcwd()] = a:name
+	echo 'Build preset: ' . a:name . ' (' . l:all[a:name] . '/)'
+endfunction
+
+function! s:PresetNames(lead, line, pos) abort
+	return filter(sort(keys(s:ConfigurePresets())), {_, n -> n =~# '^' . a:lead})
+endfunction
 
 function! s:BuildError(message) abort
 	echohl ErrorMsg
@@ -311,17 +441,25 @@ endfunction
 
 " Configure once, the way VSCode's CMake Tools does: Ninja, Debug, and a
 " compile_commands.json for clangd.
-function! s:Configure() abort
-	if filereadable(g:build_dir . '/build.ninja')
+function! s:Configure(preset, dir) abort
+	if filereadable(a:dir . '/build.ninja')
 		return 1
 	endif
-	if filereadable(g:build_dir . '/CMakeCache.txt')
-		call s:BuildError(g:build_dir
+	" A configure that failed leaves its cache behind; only another generator's
+	" cache is a reason to stop.
+	let l:cache = a:dir . '/CMakeCache.txt'
+	if filereadable(l:cache)
+		\ && empty(filter(readfile(l:cache), {_, l -> l =~# '^CMAKE_GENERATOR:INTERNAL=Ninja$'}))
+		call s:BuildError(a:dir
 			\ . '/ was configured for another generator; remove it to switch to Ninja')
 		return 0
 	endif
-	execute '!cmake -S . -B ' . shellescape(g:build_dir, 1)
-		\ . ' -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON'
+	if empty(a:preset)
+		execute '!cmake -S . -B ' . shellescape(a:dir, 1)
+			\ . ' -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON'
+	else
+		execute '!cmake --preset ' . shellescape(a:preset, 1)
+	endif
 	if v:shell_error
 		call s:BuildError('CMake configure failed')
 		return 0
@@ -346,7 +484,8 @@ function! s:Build() abort
 		call s:BuildError('no CMakeLists.txt here: start vim in the project root')
 		return 0
 	endif
-	if !s:ImportMsvcEnv() || !s:Configure()
+	let [l:preset, l:dir] = s:Target()
+	if !s:ImportMsvcEnv() || !s:Configure(l:preset, l:dir)
 		return 0
 	endif
 	silent! wall
@@ -355,7 +494,7 @@ function! s:Build() abort
 	" (bundled with Visual Studio) and 1.13 each delete the other's .ninja_log,
 	" so building with whichever ninja comes first on PATH would force a full
 	" rebuild every time VSCode and vim take turns on one build directory.
-	let &makeprg = 'cmake --build ' . shellescape(g:build_dir)
+	let &makeprg = 'cmake --build ' . shellescape(l:dir)
 	let &errorformat = s:build_efm
 	" cl.exe writes its localized messages in the ANSI code page.
 	let &makeencoding = 'cp949'
@@ -374,14 +513,14 @@ function! s:Build() abort
 		call s:BuildError('Build failed')
 		return 0
 	endif
-	echo 'Build succeeded'
+	echo 'Build succeeded' . (empty(l:preset) ? '' : ' (preset ' . l:preset . ')')
 	return 1
 endfunction
 
 " Executable targets as ninja lists them, relative to the build directory.
-function! s:Executables() abort
+function! s:Executables(dir) abort
 	let l:exes = []
-	for l:line in systemlist('ninja -C ' . shellescape(g:build_dir) . ' -t targets all')
+	for l:line in systemlist('ninja -C ' . shellescape(a:dir) . ' -t targets all')
 		let l:target = matchstr(l:line, '^\S\+\ze: \S*EXECUTABLE_LINKER')
 		if !empty(l:target)
 			call add(l:exes, l:target)
@@ -397,9 +536,10 @@ function! s:Run(pick, args) abort
 	if !s:Build()
 		return
 	endif
-	let l:exes = s:Executables()
+	let l:dir = s:Target()[1]
+	let l:exes = s:Executables(l:dir)
 	if empty(l:exes)
-		call s:BuildError('no executable target in ' . g:build_dir . '/')
+		call s:BuildError('no executable target in ' . l:dir . '/')
 		return
 	endif
 	let l:exe = get(s:run_targets, getcwd(), '')
@@ -415,13 +555,69 @@ function! s:Run(pick, args) abort
 		endif
 		let s:run_targets[getcwd()] = l:exe
 	endif
-	execute '!' . shellescape(g:build_dir . '/' . l:exe, 1)
+	execute '!' . shellescape(l:dir . '/' . l:exe, 1)
 		\ . (empty(a:args) ? '' : ' ' . a:args)
 endfunction
 
+function! s:Clean() abort
+	let l:dir = s:Target()[1]
+	if !filereadable(l:dir . '/build.ninja')
+		echo 'Nothing to clean: ' . l:dir . '/ is not configured'
+		return
+	endif
+	" Cleaning can regenerate build.ninja when CMakeLists.txt changed, and that
+	" needs the compiler.
+	if !s:ImportMsvcEnv()
+		return
+	endif
+	let l:output = system('cmake --build ' . shellescape(l:dir) . ' --target clean')
+	if v:shell_error
+		call s:BuildError('Clean failed: ' . trim(l:output))
+		return
+	endif
+	echo 'Clean succeeded'
+endfunction
+
+" vim has no debugger that reads MSVC's PDBs, so the session goes to VSCode.
+" A request file tells the vim-debug-bridge extension (vscode-debug-bridge/)
+" which window should start debugging; `code` then opens or raises that window.
+let g:vscode_debug_queue = expand('$HOME/.vim/vscode-debug')
+
+function! s:Debug() abort
+	if !filereadable('CMakeLists.txt')
+		call s:BuildError('no CMakeLists.txt here: start vim in the project root')
+		return
+	endif
+	if !executable('code')
+		call s:BuildError('VSCode (code) is not on PATH')
+		return
+	endif
+	silent! wall
+	let l:root = trim(system('cygpath -w ' . shellescape(getcwd())))
+	let l:target = fnamemodify(get(s:run_targets, getcwd(), ''), ':t:r')
+	call mkdir(g:vscode_debug_queue, 'p')
+	let l:request = g:vscode_debug_queue . '/' . localtime() . '-' . getpid() . '.json'
+	" Written aside, then renamed, so the extension never reads half a file.
+	call writefile([json_encode({'folder': l:root, 'target': l:target, 'time': localtime()})],
+		\ l:request . '.tmp')
+	call rename(l:request . '.tmp', l:request)
+	let l:args = [l:root]
+	if !empty(expand('%'))
+		call add(l:args, '--goto')
+		call add(l:args, trim(system('cygpath -w ' . shellescape(expand('%:p')))) . ':' . line('.'))
+	endif
+	call system('code ' . join(map(l:args, {_, a -> shellescape(a)})))
+	echo 'Debugging in VSCode...'
+endfunction
+
 command! -bar Build call s:Build()
+command! -bar Clean call s:Clean()
+command! -nargs=? -complete=customlist,s:PresetNames Preset call s:Preset(<q-args>)
 command! -bang -nargs=* Run call s:Run(<bang>0, <q-args>)
-nnoremap <silent> <F7> :Build<CR>
-nnoremap <silent> <F5> :Run<CR>
+command! -bar Debug call s:Debug()
+nnoremap <silent> <C-F7> :Build<CR>
+nnoremap <silent> <C-F6> :Clean<CR>
+nnoremap <silent> <C-F5> :Run<CR>
+nnoremap <silent> <F5> :Debug<CR>
 nnoremap <silent> ]q :cnext<CR>
 nnoremap <silent> [q :cprevious<CR>

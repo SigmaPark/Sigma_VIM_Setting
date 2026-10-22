@@ -183,22 +183,36 @@ reports nothing for them — read `prop_list()` instead when checking by hand.
 project root, the directory holding `CMakeLists.txt`.
 
 ```
-<F7>  :Build          configure build/ with Ninja if needed, then build
-<F5>  :Run [args]     build, then run the executable target
-      :Run! [args]    choose the target again (asked when there are several)
-]q / [q               next / previous entry in the error list
+<C-F7>  :Build          configure with Ninja if needed, then build
+        :Preset [name]  choose the CMake preset the keys use (no name: show them)
+<C-F6>  :Clean          delete the build outputs, keep the configuration
+<C-F5>  :Run [args]     build, then run the executable target
+        :Run! [args]    choose the target again (asked when there are several)
+<F5>    :Debug          open the project in VSCode and start debugging there
+]q / [q                 next / previous entry in the error list
 ```
 
 - **MSVC environment.** Git Bash has no `cl.exe`, `INCLUDE` or `LIB`. The first
   build in a vim session finds Visual Studio with `vswhere`, runs
   `vcvars64.bat`, and copies the variables it adds or changes into vim. That
   takes a few seconds, once; the shell itself is left alone.
-- **Configure.** When `build/build.ninja` is missing, `:Build` runs
+- **Presets.** When the project root has a `CMakePresets.json` (or
+  `CMakeUserPresets.json`), `:Build`, `:Run` and `:Clean` use the preset's own
+  build directory. `:Preset debug` picks one (Tab completes the names), `:Preset`
+  alone lists them. The choice is remembered per project root for the vim
+  session; before any choice the preset named `default` is used, else the only
+  preset, else vim asks. `binaryDir` is read through `inherits`, with
+  `${sourceDir}` and `${presetName}` expanded; a preset whose directory cannot
+  be worked out that way is left out.
+- **Configure.** When the build directory has no `build.ninja`, `:Build` runs
+  `cmake --preset <name>`. Without presets it runs
   `cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, which also hands clangd its
-  `compile_commands.json`. A `build/` made by another generator (e.g. Visual
-  Studio's) is left untouched; remove it to switch.
-- **The build directory's own ninja.** `:Build` runs `cmake --build build`, which
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`. Either way clangd gets its
+  `compile_commands.json` as long as the preset or command exports it. A
+  directory made by another generator (e.g. Visual Studio's) is left untouched;
+  remove it to switch. The cache of a configure that failed is not in the way:
+  the next `:Build` configures again.
+- **The build directory's own ninja.** `:Build` runs `cmake --build <dir>`, which
   uses the ninja recorded in `CMakeCache.txt` rather than the first one on PATH.
   Visual Studio bundles ninja 1.12 and winget installs 1.13, and each deletes
   the other's `.ninja_log` ("build log version is too new / too old; starting
@@ -209,9 +223,45 @@ project root, the directory holding `CMakeLists.txt`.
   code page, so the log is decoded as CP949 and Korean messages stay readable.
 - **Save first.** Modified buffers are written (`:wall`) before every build.
 - **Run.** Executable targets come from `ninja -t targets`. With one target
-  `<F5>` runs it directly; with several it asks once per project root. The
+  `<C-F5>` runs it directly; with several it asks once per project root. The
   program runs in the terminal with the project root as its working directory,
   and vim comes back after Enter.
+- **Clean.** `cmake --build <dir> --target clean`. The configuration stays, so
+  the next build does not reconfigure.
+
+### Debugging in VSCode (`<F5>`)
+
+vim has no debugger that reads MSVC's PDB files (termdebug is gdb-only), so
+`<F5>` hands the session to VSCode: it saves the buffers, drops a request file
+in `~/.vim/vscode-debug/`, and runs `code <project root> --goto <file>:<line>`.
+The **Vim Debug Bridge** extension in `vscode-debug-bridge/` watches that
+directory from every VSCode window. The window whose folder matches takes the
+request and starts debugging:
+
+- with a `launch.json`, the selected configuration (`Debug: Start Debugging`);
+- otherwise CMake Tools' `Debug` on the target last picked with `:Run`, or
+  CMake Tools' own choice. CMake Tools builds first, into the same `build/`,
+  and runs the program from the target's directory.
+
+A folder CMake Tools has never seen has no kit, and with
+`cmake.enableAutomaticKitScan` off it would configure without the MSVC
+environment. The bridge then selects the kit itself when only one is defined,
+or opens the kit picker. Requests older than two minutes are dropped. A folder
+VSCode does not trust opens in Restricted Mode with the extension off; trusting
+it within those two minutes still starts the session.
+
+Install or update the extension (needs Node.js; bump `version` in
+`package.json` first when updating):
+
+```sh
+cd vscode-debug-bridge
+npx --yes @vscode/vsce package --skip-license --allow-missing-repository -o vim-debug-bridge.vsix
+code --install-extension vim-debug-bridge.vsix --force
+rm vim-debug-bridge.vsix
+```
+
+Windows already open keep the old version until reloaded
+(`Developer: Reload Window`).
 
 ## Session persistence
 
@@ -220,7 +270,8 @@ arguments** restores the previous session (`~/.vim/session.vim`); launching
 it with a file (`vim foo.cpp`) leaves the argument list alone, same as
 always. The session file is rewritten on every `vim` exit, so whatever is
 open when you quit is what a bare `vim` reopens next time — no manual
-`:mksession` / `:source` needed.
+`:mksession` / `:source` needed. A vim in diff mode (`vimdiff`, `git difftool`)
+does not save, so a look at a diff never replaces the session.
 
 ## Lightweight profile (slow / low-end devices)
 
@@ -266,6 +317,33 @@ git:
 `date-order` keeps the graph from fanning out into a staircase on a branch that
 merges another one repeatedly: lanes are interleaved by commit date, so each one
 closes right where it rejoins.
+
+### vimdiff from lazygit (`<c-t>`)
+
+For a closer look than lazygit's diff panel, `<c-t>` on a file or commit runs
+`git difftool`, which opens vim in diff mode with the full `_vimrc` (colors,
+coc) and returns to lazygit when vim quits (`:qa`). Several files open one
+after another.
+
+```
+diff.tool       = vimdiff
+difftool.prompt = false
+```
+
+`git difftool` compares tracked changes only and exits silently on an
+untracked file. In the files panel `<c-t>` therefore runs
+`lazygit-difftool.sh` instead, which diffs an untracked file against an empty
+one, a file with only staged changes against HEAD (`--cached`), and anything
+else through `git difftool`. The commits panel keeps lazygit's own `<c-t>`.
+
+```yaml
+customCommands:
+  - key: <c-t>
+    context: files
+    output: terminal
+    description: vimdiff the selection (untracked files too)
+    command: sh "/path/to/lazygit-difftool.sh" {{.SelectedPath | quote}}
+```
 
 ## Gotcha: vertical splits kill scrolling in a terminal
 

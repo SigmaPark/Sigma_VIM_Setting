@@ -1,0 +1,25 @@
+{
+	"name": "vim-debug-bridge",
+	"displayName": "Vim Debug Bridge",
+	"description": "Starts debugging the CMake project vim asked for with <F5>.",
+	"publisher": "sigmapark",
+	"version": "0.1.1",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/SigmaPark/Sigma_VIM_Setting.git"
+	},
+	"engines": {
+		"vscode": "^1.80.0"
+	},
+	"extensionKind": [
+		"ui"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./extension.js",
+	"files": [
+		"extension.js"
+	]
+}

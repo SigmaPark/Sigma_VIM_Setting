@@ -136,13 +136,13 @@ function! s:VsDarkColors() abort
 	" coc paints over the syntax. Real comments get no token, so they stay green.
 	let l:palette = {
 		\ '#569CD6': ['Statement', 'Conditional', 'Repeat', 'Label', 'Keyword', 'Exception',
-		\     'CocSemTypeKeyword', 'CocSemTypeModifier'],
+		\     'CocSemTypeKeyword', 'CocSemTypeModifier', 'VsKeywordOp'],
 		\ '#9B9B9B': ['PreProc', 'Include', 'Define', 'Macro', 'PreCondit'],
 		\ '#C8C8C8': ['Identifier', 'Function', 'CocSemTypeNamespace', 'CocSemTypeVariable',
 		\     'CocSemTypeFunction', 'CocSemTypeMethod', 'CocSemTypeLabel'],
 		\ '#4EC9B0': ['CocSemTypeType', 'CocSemTypeClass', 'CocSemTypeStruct',
 		\     'CocSemTypeEnum', 'CocSemTypeInterface', 'CocSemTypeTypeParameter',
-		\     'CocSemTypeConcept'],
+		\     'CocSemTypeConcept', 'VsStlType'],
 		\ '#BD63C5': ['CocSemTypeMacro'],
 		\ '#7F7F7F': ['CocSemTypeParameter'],
 		\ '#DADADA': ['CocSemTypeProperty'],
@@ -164,11 +164,22 @@ function! s:VsDarkColors() abort
 	endfor
 	" vim-cpp-modern paints std as a constant; VS draws namespaces plain.
 	highlight link cppSTLnamespace Identifier
+	" Without clangd's tokens vim-cpp-modern paints std *_t names as Typedef/Type (blue)
+	" and *_v variable templates as Boolean (blue); VS draws types teal, variables plain.
+	for l:group in ['cppSTLtypedef', 'cppSTLenum', 'cppSTLconcept', 'cppSTLtype',
+		\ 'cppSTLiterator', 'cppSTLexception']
+		execute 'highlight link ' . l:group . ' VsStlType'
+	endfor
+	highlight link cppSTLbool Identifier
 endfunction
 
 augroup VsDarkColors
 	autocmd!
 	autocmd ColorScheme codedark call s:VsDarkColors()
+	" sizeof and friends are cOperator/cppOperator, which codedark paints as plain
+	" text like + and =; VS draws just these keywords blue. Re-declaring the words
+	" in our own group overrides the earlier definition, symbols stay untouched.
+	autocmd Syntax c,cpp,cuda syntax keyword VsKeywordOp sizeof alignof typeid new delete static_assert
 augroup END
 
 " Trailing whitespace shows as red cells, like the lazygit diff preview;
@@ -218,6 +229,11 @@ function! s:RestoreSession() abort
 endfunction
 
 function! s:SaveSession() abort
+	" A vimdiff (git difftool, lazygit <c-t>) is a throwaway view; saving it
+	" would replace the session the next bare `vim` restores.
+	if &diff
+		return
+	endif
 	call mkdir(g:session_dir, 'p')
 	execute 'mksession! ' . fnameescape(s:SessionFile())
 endfunction
